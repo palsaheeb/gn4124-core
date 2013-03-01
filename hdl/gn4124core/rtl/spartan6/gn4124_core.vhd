@@ -247,6 +247,9 @@ architecture rtl of gn4124_core is
   signal l2p_edb       : std_logic;
   signal l2p_edb_t     : std_logic;
   signal l2p_edb_t2    : std_logic;
+  signal tx_error_t2   : std_logic;
+  signal tx_error_t    : std_logic;
+  signal tx_error      : std_logic;
 
   -------------------------------------------------------------
   -- CSR wishbone master to arbiter
@@ -630,6 +633,7 @@ begin
       l2p_edb_o  => l2p_edb,
       l_wr_rdy_i => l_wr_rdy,
       l2p_rdy_i  => l2p_rdy,
+      tx_error_i => tx_error,
 
       l2p_dma_clk_i   => dma_clk_i,
       l2p_dma_adr_o   => l2p_dma_adr,
@@ -764,6 +768,9 @@ begin
       l2p_edb_o     <= '0';
       l2p_edb_t     <= '0';
       l2p_edb_t2    <= '0';
+      tx_error_t2   <= '0';
+      tx_error_t    <= '0';
+      tx_error      <= '0';
     elsif rising_edge(sys_clk) then
       -- must be checked before l2p_dma_master issues a master write
       l_wr_rdy_t  <= l_wr_rdy_i;
@@ -779,6 +786,11 @@ begin
       l2p_rdy_t  <= l2p_rdy_i;
       l2p_rdy_t2 <= l2p_rdy_t;
       l2p_rdy    <= l2p_rdy_t2;
+
+      -- when asserted, stop dma transfer. Should never be asserted under normal operation conditions!
+      tx_error_t  <= tx_error_i;
+      tx_error_t2 <= tx_error_t;
+      tx_error    <= tx_error_t2;
 
       --assert when packet badly ends (e.g. dma abort)
       l2p_edb_t  <= l2p_edb;

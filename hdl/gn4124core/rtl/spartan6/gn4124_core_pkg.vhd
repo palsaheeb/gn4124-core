@@ -397,6 +397,7 @@ package gn4124_core_pkg is
         l2p_edb_o  : out std_logic;                     -- Asserted when transfer is aborted
         l_wr_rdy_i : in  std_logic_vector(1 downto 0);  -- Asserted when GN4124 is ready to receive master write
         l2p_rdy_i  : in  std_logic;                     -- De-asserted to pause transfer already in progress
+        tx_error_i : in  std_logic;                     -- Transmit Error
 
         ---------------------------------------------------------
         -- DMA Interface (Pipelined Wishbone)

@@ -81,6 +81,7 @@ entity l2p_dma_master is
       l2p_edb_o  : out std_logic;                     -- Asserted when transfer is aborted
       l_wr_rdy_i : in  std_logic_vector(1 downto 0);  -- Asserted when GN4124 is ready to receive master write
       l2p_rdy_i  : in  std_logic;                     -- De-asserted to pause transfer already in progress
+      tx_error_i : in  std_logic;                     -- Asserted when unexpected or malformed packet recevied
 
       ---------------------------------------------------------
       -- DMA Interface (Pipelined Wishbone)
@@ -407,7 +408,7 @@ begin
             ldm_arb_valid_o <= '0';
           end if;
 
-          if (dma_ctrl_abort_i = '1') then
+          if (dma_ctrl_abort_i = '1' or tx_error_i = '1') then
             l2p_edb_o             <= '1';
             l2p_dma_current_state <= L2P_IDLE;
           elsif (l2p_rdy_i = '0') then
