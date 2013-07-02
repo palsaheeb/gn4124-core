@@ -140,6 +140,8 @@ architecture behaviour of l2p_dma_master is
   signal data_fifo_wr    : std_logic;
   signal data_fifo_full  : std_logic;
 
+  signal data_fifo_valid_ex : std_logic;
+
   -- Wishbone
   signal wb_read_cnt   : unsigned(31 downto 0);
   signal wb_ack_cnt    : unsigned(31 downto 0);
@@ -277,7 +279,7 @@ begin
         else
           l2p_len_cnt <= (others => '0');
         end if;
-      elsif (l2p_dma_current_state = L2P_DATA and data_fifo_valid = '1') then
+      elsif ((l2p_dma_current_state = L2P_DATA or l2p_dma_current_state = L2P_WAIT_RDY) and data_fifo_valid = '1') then
         l2p_data_cnt <= l2p_data_cnt - 1;
       elsif (l2p_last_packet = '0' and l2p_dma_current_state = L2P_LAST_DATA) then
         -- load the host address of the next packet
@@ -333,17 +335,19 @@ begin
       data_fifo_rd          <= '0';
       dma_ctrl_done_o       <= '0';
       l2p_edb_o             <= '0';
+      data_fifo_valid_ex    <= '0';
     elsif rising_edge(clk_i) then
       case l2p_dma_current_state is
 
         when L2P_IDLE =>
           -- do nothing !
-          data_fifo_rd     <= '0';
-          dma_ctrl_done_o  <= '0';
-          ldm_arb_data_o   <= (others => '0');
-          ldm_arb_valid_o  <= '0';
-          ldm_arb_dframe_o <= '0';
-          l2p_edb_o        <= '0';
+          data_fifo_rd       <= '0';
+          dma_ctrl_done_o    <= '0';
+          ldm_arb_data_o     <= (others => '0');
+          ldm_arb_valid_o    <= '0';
+          ldm_arb_dframe_o   <= '0';
+          l2p_edb_o          <= '0';
+          data_fifo_valid_ex <= '0';
 
           if (data_fifo_empty = '0') then
             -- We have data to send -> prepare a packet, first the header
@@ -400,7 +404,8 @@ begin
           end if;
 
         when L2P_DATA =>
-          if (data_fifo_valid = '1') then
+          data_fifo_valid_ex <= '0';
+          if (data_fifo_valid = '1' or data_fifo_valid_ex = '1') then
             -- send data with byte swap if requested
             ldm_arb_data_o  <= f_byte_swap(g_BYTE_SWAP, data_fifo_dout, l2p_byte_swap);
             ldm_arb_valid_o <= '1';
@@ -442,6 +447,7 @@ begin
               l2p_dma_current_state <= L2P_DATA;
               -- Re-start fifo reading
               data_fifo_rd          <= '1';
+              data_fifo_valid_ex    <= '1';
             end if;
           end if;
 
@@ -493,6 +499,7 @@ begin
           ldm_arb_dframe_o      <= '0';
           data_fifo_rd          <= '0';
           dma_ctrl_done_o       <= '0';
+          data_fifo_valid_ex    <= '0';
 
       end case;
     end if;
