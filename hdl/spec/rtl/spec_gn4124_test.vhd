@@ -456,6 +456,9 @@ begin
 
   ------------------------------------------------------------------------------
   -- CSR wishbone address decoder
+  --  0x00000 : DMA configuration registers
+  --  0x40000 : Status registers
+  --  0x80000 : Control regiters
   ------------------------------------------------------------------------------
   cmp_csr_wb_addr_decoder : wb_addr_decoder
     generic map (
