@@ -97,94 +97,6 @@ architecture rtl of spec_gn4124_test is
   ------------------------------------------------------------------------------
   -- Components declaration
   ------------------------------------------------------------------------------
-
-  component gn4124_core
-    port
-      (
-        ---------------------------------------------------------
-        -- Control and status
-        rst_n_a_i : in  std_logic;                      -- Asynchronous reset from GN4124
-        status_o  : out std_logic_vector(31 downto 0);  -- Core status output
-
-        ---------------------------------------------------------
-        -- P2L Direction
-        --
-        -- Source Sync DDR related signals
-        p2l_clk_p_i  : in  std_logic;                      -- Receiver Source Synchronous Clock+
-        p2l_clk_n_i  : in  std_logic;                      -- Receiver Source Synchronous Clock-
-        p2l_data_i   : in  std_logic_vector(15 downto 0);  -- Parallel receive data
-        p2l_dframe_i : in  std_logic;                      -- Receive Frame
-        p2l_valid_i  : in  std_logic;                      -- Receive Data Valid
-        -- P2L Control
-        p2l_rdy_o    : out std_logic;                      -- Rx Buffer Full Flag
-        p_wr_req_i   : in  std_logic_vector(1 downto 0);   -- PCIe Write Request
-        p_wr_rdy_o   : out std_logic_vector(1 downto 0);   -- PCIe Write Ready
-        rx_error_o   : out std_logic;                      -- Receive Error
-
-        ---------------------------------------------------------
-        -- L2P Direction
-        --
-        -- Source Sync DDR related signals
-        l2p_clk_p_o  : out std_logic;                      -- Transmitter Source Synchronous Clock+
-        l2p_clk_n_o  : out std_logic;                      -- Transmitter Source Synchronous Clock-
-        l2p_data_o   : out std_logic_vector(15 downto 0);  -- Parallel transmit data
-        l2p_dframe_o : out std_logic;                      -- Transmit Data Frame
-        l2p_valid_o  : out std_logic;                      -- Transmit Data Valid
-        l2p_edb_o    : out std_logic;                      -- Packet termination and discard
-        -- L2P Control
-        l2p_rdy_i    : in  std_logic;                      -- Tx Buffer Full Flag
-        l_wr_rdy_i   : in  std_logic_vector(1 downto 0);   -- Local-to-PCIe Write
-        p_rd_d_rdy_i : in  std_logic_vector(1 downto 0);   -- PCIe-to-Local Read Response Data Ready
-        tx_error_i   : in  std_logic;                      -- Transmit Error
-        vc_rdy_i     : in  std_logic_vector(1 downto 0);   -- Channel ready
-
-        ---------------------------------------------------------
-        -- Interrupt interface
-        dma_irq_o : out std_logic_vector(1 downto 0);  -- Interrupts sources to IRQ manager
-        irq_p_i   : in  std_logic;                     -- Interrupt request pulse from IRQ manager
-        irq_p_o   : out std_logic;                     -- Interrupt request pulse to GN4124 GPIO
-
-        ---------------------------------------------------------
-        -- DMA registers wishbone interface (slave classic)
-        dma_reg_clk_i   : in  std_logic;
-        dma_reg_adr_i   : in  std_logic_vector(31 downto 0);
-        dma_reg_dat_i   : in  std_logic_vector(31 downto 0);
-        dma_reg_sel_i   : in  std_logic_vector(3 downto 0);
-        dma_reg_stb_i   : in  std_logic;
-        dma_reg_we_i    : in  std_logic;
-        dma_reg_cyc_i   : in  std_logic;
-        dma_reg_dat_o   : out std_logic_vector(31 downto 0);
-        dma_reg_ack_o   : out std_logic;
-        dma_reg_stall_o : out std_logic;
-
-        ---------------------------------------------------------
-        -- CSR wishbone interface (master pipelined)
-        csr_clk_i   : in  std_logic;
-        csr_adr_o   : out std_logic_vector(31 downto 0);
-        csr_dat_o   : out std_logic_vector(31 downto 0);
-        csr_sel_o   : out std_logic_vector(3 downto 0);
-        csr_stb_o   : out std_logic;
-        csr_we_o    : out std_logic;
-        csr_cyc_o   : out std_logic;
-        csr_dat_i   : in  std_logic_vector(31 downto 0);
-        csr_ack_i   : in  std_logic;
-        csr_stall_i : in  std_logic;
-
-        ---------------------------------------------------------
-        -- DMA interface (Pipelined wishbone master)
-        dma_clk_i   : in  std_logic;
-        dma_adr_o   : out std_logic_vector(31 downto 0);
-        dma_dat_o   : out std_logic_vector(31 downto 0);
-        dma_sel_o   : out std_logic_vector(3 downto 0);
-        dma_stb_o   : out std_logic;
-        dma_we_o    : out std_logic;
-        dma_cyc_o   : out std_logic;
-        dma_dat_i   : in  std_logic_vector(31 downto 0);
-        dma_ack_i   : in  std_logic;
-        dma_stall_i : in  std_logic
-        );
-  end component;  --  gn4124_core
-
   component wb_addr_decoder
     generic
       (
@@ -292,6 +204,9 @@ architecture rtl of spec_gn4124_test is
   signal wbm_we    : std_logic;
   signal wbm_ack   : std_logic;
   signal wbm_stall : std_logic;
+  signal wbm_err   : std_logic;
+  signal wbm_rty   : std_logic;
+  signal wbm_int   : std_logic;
 
   -- CSR wishbone bus (slaves)
   signal wb_adr   : std_logic_vector(31 downto 0);
@@ -314,6 +229,9 @@ architecture rtl of spec_gn4124_test is
   signal dma_we    : std_logic;
   signal dma_ack   : std_logic;
   signal dma_stall : std_logic;
+  signal dma_err   : std_logic;
+  signal dma_rty   : std_logic;
+  signal dma_int   : std_logic;
   signal ram_we    : std_logic;
 
   -- Interrupts stuff
@@ -439,6 +357,9 @@ begin
       csr_dat_i   => wbm_dat_i,
       csr_ack_i   => wbm_ack,
       csr_stall_i => wbm_stall,
+      csr_err_i   => wbm_err,
+      csr_rty_i   => wbm_rty,
+      csr_int_i   => wbm_int,
 
       ---------------------------------------------------------
       -- DMA wishbone interface (master pipelined)
@@ -451,7 +372,10 @@ begin
       dma_cyc_o   => dma_cyc,
       dma_dat_i   => dma_dat_i,
       dma_ack_i   => dma_ack,
-      dma_stall_i => dma_stall
+      dma_stall_i => dma_stall,
+      dma_err_i   => dma_err,
+      dma_rty_i   => dma_rty,
+      dma_int_i   => dma_int
       );
 
   ------------------------------------------------------------------------------
@@ -495,6 +419,10 @@ begin
       wb_ack_i   => wb_ack,
       wb_stall_i => wb_stall
       );
+
+  wbm_err <= '0';
+  wbm_rty <= '0';
+  wbm_int <= '0';
 
   ------------------------------------------------------------------------------
   -- CSR wishbone bus slaves
@@ -582,6 +510,10 @@ begin
       d_i     => dma_dat_o,
       q_o     => dma_dat_i
       );
+
+  dma_err <= '0';
+  dma_rty <= '0';
+  dma_int <= '0';
 
 
   ------------------------------------------------------------------------------
