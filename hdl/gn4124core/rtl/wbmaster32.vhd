@@ -48,6 +48,9 @@ use work.genram_pkg.all;
 
 
 entity wbmaster32 is
+  generic (
+    g_ACK_TIMEOUT : positive := 100     -- Wishbone ACK timeout (in wb_clk cycles)
+    );
   port
     (
       ---------------------------------------------------------
@@ -156,6 +159,9 @@ architecture behaviour of wbmaster32 is
   signal wb_we_t    : std_logic;
   signal wb_sel_t   : std_logic_vector(3 downto 0);
   signal wb_stall_t : std_logic;
+
+  signal wb_ack_timeout_cnt : unsigned(log2_ceil(g_ACK_TIMEOUT)-1 downto 0);
+  signal wb_ack_timeout     : std_logic;
 
   -- L2P packet generator
   type   l2p_read_cpl_state_type is (L2P_IDLE, L2P_HEADER, L2P_DATA);
@@ -447,8 +453,11 @@ begin
             -- end of the bus cycle
             wb_cyc_t               <= '0';
             wishbone_current_state <= WB_IDLE;
-          elsif (wb_err_t = '1') then
-            -- e.g. when trying to access unmapped wishbone addresses, ERR is set
+          elsif (wb_err_t = '1') or (wb_ack_timeout = '1') then
+            -- e.g. When trying to access unmapped wishbone addresses,
+            -- the wb crossbar asserts ERR. If ERR is not asserted when
+            -- accessing un-mapped addresses, a timeout makes sure the
+            -- transaction terminates.
             if (wb_we_t = '0') then
               from_wb_fifo_din <= (others => '1');  -- dummy data as the transaction failed
               from_wb_fifo_wr  <= '1';
@@ -485,6 +494,35 @@ begin
   wb_ack_t   <= wb_ack_i;
   wb_stall_t <= wb_stall_i;
   wb_err_t   <= wb_err_i;
+
+  -- ACK timeout
+  p_wb_ack_timeout_cnt : process (wb_clk_i, rst_n_i)
+  begin
+    if rst_n_i = c_RST_ACTIVE then
+      wb_ack_timeout_cnt <= (others => '1');
+    elsif rising_edge(wb_clk_i) then
+      if wishbone_current_state = WB_WAIT_ACK then
+        if wb_ack_timeout_cnt /= 0 then
+          wb_ack_timeout_cnt <= wb_ack_timeout_cnt - 1;
+        end if;
+      else
+        wb_ack_timeout_cnt <= (others => '1');
+      end if;
+    end if;
+  end process p_wb_ack_timeout_cnt;
+
+  p_ack_timeout : process (wb_clk_i, rst_n_i)
+  begin
+    if rst_n_i = c_RST_ACTIVE then
+      wb_ack_timeout <= '0';
+    elsif rising_edge(wb_clk_i) then
+      if wb_ack_timeout_cnt = 0 then
+        wb_ack_timeout <= '1';
+      else
+        wb_ack_timeout <= '0';
+      end if;
+    end if;
+  end process p_ack_timeout;
 
 end behaviour;
 

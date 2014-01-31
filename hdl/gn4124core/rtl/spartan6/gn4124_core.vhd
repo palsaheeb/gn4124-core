@@ -51,6 +51,9 @@ use UNISIM.vcomponents.all;
 -- Entity declaration for GN4124 core (gn4124_core)
 --==============================================================================
 entity gn4124_core is
+  generic (
+    g_ACK_TIMEOUT : positive := 100                    -- Wishbone ACK timeout (in wishbone clock cycles)
+    );
   port
     (
       ---------------------------------------------------------
@@ -491,6 +494,9 @@ begin
   -- Wishbone master
   -----------------------------------------------------------------------------
   cmp_wbmaster32 : wbmaster32
+    generic map(
+      g_ACK_TIMEOUT => g_ACK_TIMEOUT
+      )
     port map
     (
       ---------------------------------------------------------

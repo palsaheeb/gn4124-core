@@ -68,6 +68,9 @@ package gn4124_core_pkg is
 
 -----------------------------------------------------------------------------
   component gn4124_core
+    generic (
+      g_ACK_TIMEOUT : positive := 100                    -- Wishbone ACK timeout (in wishbone clock cycles)
+      );
     port
       (
         ---------------------------------------------------------
@@ -257,6 +260,9 @@ package gn4124_core_pkg is
 
 -----------------------------------------------------------------------------
   component wbmaster32
+    generic (
+      g_ACK_TIMEOUT : positive := 100    -- Wishbone ACK timeout (in wb_clk cycles)
+      );
     port
       (
         ---------------------------------------------------------
