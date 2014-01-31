@@ -138,6 +138,9 @@ package gn4124_core_pkg is
         csr_dat_i   : in  std_logic_vector(31 downto 0);
         csr_ack_i   : in  std_logic;
         csr_stall_i : in  std_logic;
+        csr_err_i   : in  std_logic;
+        csr_rty_i   : in  std_logic;
+        csr_int_i   : in  std_logic;
 
         ---------------------------------------------------------
         -- DMA wishbone interface (master pipelined)
@@ -150,7 +153,10 @@ package gn4124_core_pkg is
         dma_cyc_o   : out std_logic;
         dma_dat_i   : in  std_logic_vector(31 downto 0);
         dma_ack_i   : in  std_logic;
-        dma_stall_i : in  std_logic
+        dma_stall_i : in  std_logic;
+        dma_err_i   : in  std_logic;
+        dma_rty_i   : in  std_logic;
+        dma_int_i   : in  std_logic
         );
   end component gn4124_core;
 
@@ -303,7 +309,10 @@ package gn4124_core_pkg is
         wb_cyc_o   : out std_logic;                      -- Cycle
         wb_dat_i   : in  std_logic_vector(31 downto 0);  -- Data in
         wb_ack_i   : in  std_logic;                      -- Acknowledge
-        wb_stall_i : in  std_logic                       -- Stall
+        wb_stall_i : in  std_logic;                      -- Stall
+        wb_err_i   : in  std_logic;                      -- Error
+        wb_rty_i   : in  std_logic;                      -- Retry
+        wb_int_i   : in  std_logic                       -- Interrupt
         );
   end component;  -- wbmaster32
 

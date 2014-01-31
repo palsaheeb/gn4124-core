@@ -101,7 +101,10 @@ entity wbmaster32 is
       wb_cyc_o   : out std_logic;                      -- Cycle
       wb_dat_i   : in  std_logic_vector(31 downto 0);  -- Data in
       wb_ack_i   : in  std_logic;                      -- Acknowledge
-      wb_stall_i : in  std_logic                       -- Stall
+      wb_stall_i : in  std_logic;                      -- Stall
+      wb_err_i   : in  std_logic;                      -- Error
+      wb_rty_i   : in  std_logic;                      -- Retry
+      wb_int_i   : in  std_logic                       -- Interrupt
       );
 end wbmaster32;
 
@@ -144,6 +147,7 @@ architecture behaviour of wbmaster32 is
   signal wishbone_current_state : wishbone_state_type;
 
   signal wb_ack_t   : std_logic;
+  signal wb_err_t   : std_logic;
   signal wb_dat_i_t : std_logic_vector(31 downto 0);
   signal wb_cyc_t   : std_logic;
   signal wb_dat_o_t : std_logic_vector(31 downto 0);
@@ -443,6 +447,15 @@ begin
             -- end of the bus cycle
             wb_cyc_t               <= '0';
             wishbone_current_state <= WB_IDLE;
+          elsif (wb_err_t = '1') then
+            -- e.g. when trying to access unmapped wishbone addresses, ERR is set
+            if (wb_we_t = '0') then
+              from_wb_fifo_din <= (others => '1');  -- dummy data as the transaction failed
+              from_wb_fifo_wr  <= '1';
+            end if;
+            -- end of the bus cycle
+            wb_cyc_t               <= '0';
+            wishbone_current_state <= WB_IDLE;
           end if;
 
         when others =>
@@ -471,6 +484,7 @@ begin
   wb_dat_o   <= wb_dat_o_t;
   wb_ack_t   <= wb_ack_i;
   wb_stall_t <= wb_stall_i;
+  wb_err_t   <= wb_err_i;
 
 end behaviour;
 

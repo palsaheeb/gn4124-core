@@ -121,6 +121,9 @@ entity gn4124_core is
       csr_dat_i   : in  std_logic_vector(31 downto 0);
       csr_ack_i   : in  std_logic;
       csr_stall_i : in  std_logic;
+      csr_err_i   : in  std_logic;
+      csr_rty_i   : in  std_logic;      -- not used internally
+      csr_int_i   : in  std_logic;      -- not used internally
 
       ---------------------------------------------------------
       -- DMA wishbone interface (master pipelined)
@@ -133,7 +136,10 @@ entity gn4124_core is
       dma_cyc_o   : out std_logic;
       dma_dat_i   : in  std_logic_vector(31 downto 0);
       dma_ack_i   : in  std_logic;
-      dma_stall_i : in  std_logic
+      dma_stall_i : in  std_logic;
+      dma_err_i   : in  std_logic;      -- not used internally
+      dma_rty_i   : in  std_logic;      -- not used internally
+      dma_int_i   : in  std_logic       -- not used internally
       );
 end gn4124_core;
 
@@ -537,7 +543,10 @@ begin
       wb_stb_o   => csr_stb_o,
       wb_we_o    => csr_we_o,
       wb_ack_i   => csr_ack_i,
-      wb_stall_i => csr_stall_i
+      wb_stall_i => csr_stall_i,
+      wb_err_i   => csr_err_i,
+      wb_rty_i   => csr_rty_i,
+      wb_int_i   => csr_int_i
       );
 
   -- Adapt address bus width for top level
