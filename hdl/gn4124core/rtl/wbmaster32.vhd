@@ -315,7 +315,7 @@ begin
   cmp_fifo_to_wb : generic_async_fifo
     generic map (
       g_data_width             => 64,
-      g_size                   => 512,
+      g_size                   => 128,
       g_show_ahead             => false,
       g_with_rd_empty          => true,
       g_with_rd_full           => false,
@@ -356,7 +356,7 @@ begin
   cmp_from_wb_fifo : generic_async_fifo
     generic map (
       g_data_width             => 32,
-      g_size                   => 512,
+      g_size                   => 128,
       g_show_ahead             => false,
       g_with_rd_empty          => true,
       g_with_rd_full           => false,
