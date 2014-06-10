@@ -161,8 +161,8 @@ architecture behaviour of l2p_dma_master is
   -- Allowed c_L2P_MAX_PAYLOAD values are: 32, 64, 128, 256, 512, 1024.
   -- This constant must be set according to the GN4124 and motherboard chipset capabilities.
   constant c_L2P_MAX_PAYLOAD      : unsigned(10 downto 0) := to_unsigned(32, 11);  -- in 32-bit words
-  constant c_ADDR_FIFO_FULL_THRES : integer               := 800;
-  constant c_DATA_FIFO_FULL_THRES : integer               := 800;
+  constant c_ADDR_FIFO_FULL_THRES : integer               := 500;
+  constant c_DATA_FIFO_FULL_THRES : integer               := 500;
 
   -----------------------------------------------------------------------------
   -- Signals declaration
