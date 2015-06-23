@@ -4,7 +4,8 @@ files = ["dma_controller.vhd",
          "l2p_dma_master.vhd",
          "p2l_decode32.vhd",
          "p2l_dma_master.vhd",
-         "wbmaster32.vhd"]
+         "wbmaster32.vhd",
+         "../../spec/ip_cores/l2p_fifo.ngc"]
 
 modules = { "local" : "spartan6"}
 
