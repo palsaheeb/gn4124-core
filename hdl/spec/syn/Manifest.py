@@ -7,7 +7,8 @@ syn_package = "fgg484"
 syn_top = "spec_gn4124_test"
 syn_project = "spec_gn4124_test.xise"
 
-files = ["../spec_gn4124_test.ucf"]
+files = ["../spec_gn4124_test.ucf",
+	 "../ip_cores/l2p_fifo.ngc"]
 
 modules = { "local" : ["../rtl",
                        "../../common/rtl",
