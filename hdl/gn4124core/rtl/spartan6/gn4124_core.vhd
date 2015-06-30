@@ -180,15 +180,27 @@ architecture rtl of gn4124_core is
       rx_bufpll_lckd  : out std_logic);                      -- BUFPLL locked
   end component serdes_1_to_n_clk_pll_s2_diff;
 
-  component pulse_synchronizer
-    port (
-      clk_in_i  : in  std_logic;        --! Input pulse clock domain
-      clk_out_i : in  std_logic;        --! Output pulse clock domain
-      pulse_i   : in  std_logic;        --! One clk_in_i tick input pulse
-      done_o    : out std_logic;        --! Input pulse is synchronized (1 clk_in_i tick)
-      pulse_o   : out std_logic         --! One clk_out_i tick output pulse
-      );
-  end component pulse_synchronizer;
+
+
+component gc_pulse_synchronizer is
+  port (
+    -- pulse input clock
+    clk_in_i  : in  std_logic;
+    -- pulse output clock
+    clk_out_i : in  std_logic;
+    -- system reset (clk_in_i domain)
+    rst_n_i   : in  std_logic;
+    -- pulse input ready (clk_in_i domain). When HI, a pulse coming to d_p_i will be
+    -- correctly transferred to q_p_o.
+    d_ready_o : out std_logic;
+    -- pulse input (clk_in_i domain)
+    d_p_i     : in  std_logic;
+    -- pulse output (clk_out_i domain)
+    q_p_o     : out std_logic);
+end component gc_pulse_synchronizer;
+
+
+
 
   ------------------------------------------------------------------------------
   -- Signals declaration
@@ -610,13 +622,14 @@ begin
 
   -- Synchronise DMA IRQ pulse to csr_clk_i clock domain
   l_dma_irq_sync : for I in 0 to dma_irq'length-1 generate
-    cmp_dma_irq_sync : pulse_synchronizer
+    cmp_dma_irq_sync : gc_pulse_synchronizer
       port map(
         clk_in_i  => sys_clk,
         clk_out_i => csr_clk_i,
-        pulse_i   => dma_irq(I),
-        done_o    => open,
-        pulse_o   => dma_irq_o(I)
+        rst_n_i => rst_n,
+        d_p_i   => dma_irq(I),
+        d_ready_o    => open,
+        q_p_o   => dma_irq_o(I)
         );
   end generate l_dma_irq_sync;
 
