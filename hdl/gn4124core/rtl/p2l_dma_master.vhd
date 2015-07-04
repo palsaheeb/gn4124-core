@@ -42,7 +42,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 use work.gn4124_core_pkg.all;
---use work.common_pkg.all;
+use work.genram_pkg.all;
 
 entity p2l_dma_master is
   generic (
