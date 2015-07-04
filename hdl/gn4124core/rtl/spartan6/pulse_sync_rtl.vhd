@@ -78,7 +78,7 @@ end entity pulse_synchronizer;
 architecture rtl of pulse_synchronizer is
 
   signal s_input_toggle : std_logic := '0';
-  signal s_input_sync   : std_logic_vector(2 downto 0);
+  signal s_input_sync   : std_logic_vector(6 downto 0);
   signal s_gotit_toggle : std_logic := '0';
   signal s_gotit_sync   : std_logic_vector(2 downto 0);
   signal s_output_pulse : std_logic;
@@ -113,11 +113,15 @@ begin
      s_input_sync(0) <= s_input_toggle;
      s_input_sync(1) <= s_input_sync(0);
      s_input_sync(2) <= s_input_sync(1);
+     s_input_sync(3) <= s_input_sync(2);
+     s_input_sync(4) <= s_input_sync(3);
+     s_input_sync(5) <= s_input_sync(4);
+     s_input_sync(6) <= s_input_sync(5);
    end if;
 end process p_input_sync;
 
 -- generates 1 tick pulse when s_input_toggle changes
-s_output_pulse <= s_input_sync(1) xor s_input_sync(2);
+s_output_pulse <= s_input_sync(1) xor s_input_sync(6);
 
 -- assign pulse output port
 pulse_o <= s_output_pulse;

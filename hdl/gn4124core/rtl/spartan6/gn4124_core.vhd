@@ -180,27 +180,15 @@ architecture rtl of gn4124_core is
       rx_bufpll_lckd  : out std_logic);                      -- BUFPLL locked
   end component serdes_1_to_n_clk_pll_s2_diff;
 
-
-
-component gc_pulse_synchronizer is
-  port (
-    -- pulse input clock
-    clk_in_i  : in  std_logic;
-    -- pulse output clock
-    clk_out_i : in  std_logic;
-    -- system reset (clk_in_i domain)
-    rst_n_i   : in  std_logic;
-    -- pulse input ready (clk_in_i domain). When HI, a pulse coming to d_p_i will be
-    -- correctly transferred to q_p_o.
-    d_ready_o : out std_logic;
-    -- pulse input (clk_in_i domain)
-    d_p_i     : in  std_logic;
-    -- pulse output (clk_out_i domain)
-    q_p_o     : out std_logic);
-end component gc_pulse_synchronizer;
-
-
-
+  component pulse_synchronizer
+    port (
+      clk_in_i  : in  std_logic;        --! Input pulse clock domain
+      clk_out_i : in  std_logic;        --! Output pulse clock domain
+      pulse_i   : in  std_logic;        --! One clk_in_i tick input pulse
+      done_o    : out std_logic;        --! Input pulse is synchronized (1 clk_in_i tick)
+      pulse_o   : out std_logic         --! One clk_out_i tick output pulse
+      );
+  end component pulse_synchronizer;
 
   ------------------------------------------------------------------------------
   -- Signals declaration
@@ -368,8 +356,23 @@ begin
   ------------------------------------------------------------------------------
   -- Status output assignment
   ------------------------------------------------------------------------------
-  status_o(0)           <= p2l_pll_locked;
-  status_o(31 downto 1) <= (others => '0');
+  status_o(0) <= l2p_edb;
+  status_o(1) <= irq_p_i;
+  status_o(2) <= p2l_rdy_wbm and p2l_rdy_pdm;
+  status_o(3) <= arb_ser_valid;
+  status_o(4) <= arb_ser_dframe;
+  status_o(20 downto 5) <= ldm_arb_data(15 downto 0);
+  status_o(21) <= arb_pdm_gnt;
+  status_o(22) <= arb_ldm_gnt;
+  status_o(23) <= arb_wbm_gnt;
+  status_o(24) <= ldm_arb_req;
+  status_o(25) <= pdm_arb_req;
+  status_o(26) <= wbm_arb_req;
+  status_o(27 downto 28) <= p_rd_d_rdy;
+  status_o(29 downto 30) <= l_wr_rdy;
+  status_o(31) <= l2p_rdy;
+--  status_o(31 downto 1) <= (others => '0');
+  
 
   ------------------------------------------------------------------------------
   -- Clock Input. Generate ioclocks and system clock via BUFPLL
@@ -622,14 +625,13 @@ begin
 
   -- Synchronise DMA IRQ pulse to csr_clk_i clock domain
   l_dma_irq_sync : for I in 0 to dma_irq'length-1 generate
-    cmp_dma_irq_sync : gc_pulse_synchronizer
+    cmp_dma_irq_sync : pulse_synchronizer
       port map(
         clk_in_i  => sys_clk,
         clk_out_i => csr_clk_i,
-        rst_n_i => rst_n,
-        d_p_i   => dma_irq(I),
-        d_ready_o    => open,
-        q_p_o   => dma_irq_o(I)
+        pulse_i   => dma_irq(I),
+        done_o    => open,
+        pulse_o   => dma_irq_o(I)
         );
   end generate l_dma_irq_sync;
 
@@ -821,7 +823,8 @@ begin
       tx_error    <= tx_error_t2;
 
       --assert when packet badly ends (e.g. dma abort)
-      l2p_edb_t  <= l2p_edb;
+      --l2p_edb_t  <= l2p_edb;
+      l2p_edb_t  <= '0';
       l2p_edb_t2 <= l2p_edb_t;
       l2p_edb_o  <= l2p_edb_t2;
     end if;
