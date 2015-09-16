@@ -118,8 +118,10 @@ architecture behaviour of wbmaster32 is
   -----------------------------------------------------------------------------
   -- Constants declaration
   -----------------------------------------------------------------------------
-  constant c_TO_WB_FIFO_FULL_THRES   : integer := 500;
-  constant c_FROM_WB_FIFO_FULL_THRES : integer := 500;
+  constant c_TO_WB_FIFO_SIZE         : integer := 128;
+  constant c_TO_WB_FIFO_FULL_THRES   : integer := 110;
+  constant c_FROM_WB_FIFO_SIZE       : integer := 128;
+  constant c_FROM_WB_FIFO_FULL_THRES : integer := 110;
 
   -----------------------------------------------------------------------------
   -- Signals declaration
@@ -315,7 +317,7 @@ begin
   cmp_fifo_to_wb : generic_async_fifo
     generic map (
       g_data_width             => 64,
-      g_size                   => 128,
+      g_size                   => c_TO_WB_FIFO_SIZE,
       g_show_ahead             => false,
       g_with_rd_empty          => true,
       g_with_rd_full           => false,
@@ -356,7 +358,7 @@ begin
   cmp_from_wb_fifo : generic_async_fifo
     generic map (
       g_data_width             => 32,
-      g_size                   => 128,
+      g_size                   => c_FROM_WB_FIFO_SIZE,
       g_show_ahead             => false,
       g_with_rd_empty          => true,
       g_with_rd_full           => false,
