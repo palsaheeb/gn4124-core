@@ -1,5 +1,5 @@
-This example project was last tested on January 31st 2014,
-using hdlmake (isyp branch, sha 6b7aa78e37cdd9b60b227834ad4ef307d242ed1b).
+This example project was last tested on March 18st 2016,
+using hdlmake (develop branch).
 
 A binary of the generated gateware (spec_gn4124_test.bin) is stored in the
 files section of the project:
@@ -7,9 +7,8 @@ http://www.ohwr.org/projects/gn4124-core/files
 
 Procedure to generate the gateware binary:
 $ cd <gn4124 core dir>/hdl/spec/syn/
-$ hdlmake -f
-$ hdlmake --ise-proj
-$ hdlmake --make-ise
+$ hdlmake fetch
+$ hdlmake
 $ make
 
 Memory map:
