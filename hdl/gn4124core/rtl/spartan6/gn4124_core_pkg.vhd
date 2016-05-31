@@ -118,13 +118,13 @@ package gn4124_core_pkg is
 
         ---------------------------------------------------------
         -- DMA registers wishbone interface (slave classic)
-        dma_reg_clk_i   : in  std_logic;
-        dma_reg_adr_i   : in  std_logic_vector(31 downto 0);
-        dma_reg_dat_i   : in  std_logic_vector(31 downto 0);
-        dma_reg_sel_i   : in  std_logic_vector(3 downto 0);
-        dma_reg_stb_i   : in  std_logic;
-        dma_reg_we_i    : in  std_logic;
-        dma_reg_cyc_i   : in  std_logic;
+        dma_reg_clk_i   : in  std_logic := '0';
+        dma_reg_adr_i   : in  std_logic_vector(31 downto 0) := x"00000000";
+        dma_reg_dat_i   : in  std_logic_vector(31 downto 0) := x"00000000";
+        dma_reg_sel_i   : in  std_logic_vector(3 downto 0) := x"0";
+        dma_reg_stb_i   : in  std_logic := '0';
+        dma_reg_we_i    : in  std_logic := '0';
+        dma_reg_cyc_i   : in  std_logic := '0';
         dma_reg_dat_o   : out std_logic_vector(31 downto 0);
         dma_reg_ack_o   : out std_logic;
         dma_reg_stall_o : out std_logic;
@@ -141,25 +141,25 @@ package gn4124_core_pkg is
         csr_dat_i   : in  std_logic_vector(31 downto 0);
         csr_ack_i   : in  std_logic;
         csr_stall_i : in  std_logic;
-        csr_err_i   : in  std_logic;
-        csr_rty_i   : in  std_logic;
-        csr_int_i   : in  std_logic;
+        csr_err_i   : in  std_logic := '0';
+        csr_rty_i   : in  std_logic := '0';
+        csr_int_i   : in  std_logic := '0';
 
         ---------------------------------------------------------
         -- DMA wishbone interface (master pipelined)
-        dma_clk_i   : in  std_logic;
+        dma_clk_i   : in  std_logic := '0';
         dma_adr_o   : out std_logic_vector(31 downto 0);
         dma_dat_o   : out std_logic_vector(31 downto 0);
         dma_sel_o   : out std_logic_vector(3 downto 0);
         dma_stb_o   : out std_logic;
         dma_we_o    : out std_logic;
         dma_cyc_o   : out std_logic;
-        dma_dat_i   : in  std_logic_vector(31 downto 0);
-        dma_ack_i   : in  std_logic;
-        dma_stall_i : in  std_logic;
-        dma_err_i   : in  std_logic;
-        dma_rty_i   : in  std_logic;
-        dma_int_i   : in  std_logic
+        dma_dat_i   : in  std_logic_vector(31 downto 0) := x"00000000";
+        dma_ack_i   : in  std_logic := '0';
+        dma_stall_i : in  std_logic := '0';
+        dma_err_i   : in  std_logic := '0';
+        dma_rty_i   : in  std_logic := '0';
+        dma_int_i   : in  std_logic := '0'
         );
   end component gn4124_core;
 

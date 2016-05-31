@@ -134,18 +134,19 @@ architecture behaviour of wbmaster32 is
   signal to_wb_fifo_full  : std_logic;
   signal to_wb_fifo_rd    : std_logic;
   signal to_wb_fifo_wr    : std_logic;
-  signal to_wb_fifo_din   : std_logic_vector(63 downto 0);
-  signal to_wb_fifo_dout  : std_logic_vector(63 downto 0);
+  signal to_wb_fifo_din   : std_logic_vector(65 downto 0);
+  signal to_wb_fifo_dout  : std_logic_vector(65 downto 0);
   signal to_wb_fifo_rw    : std_logic;
   signal to_wb_fifo_data  : std_logic_vector(31 downto 0);
   signal to_wb_fifo_addr  : std_logic_vector(30 downto 0);
+  signal to_wb_fifo_cid   : std_logic_vector(1 downto 0);
 
   signal from_wb_fifo_empty : std_logic;
   signal from_wb_fifo_full  : std_logic;
   signal from_wb_fifo_rd    : std_logic;
   signal from_wb_fifo_wr    : std_logic;
-  signal from_wb_fifo_din   : std_logic_vector(31 downto 0);
-  signal from_wb_fifo_dout  : std_logic_vector(31 downto 0);
+  signal from_wb_fifo_din   : std_logic_vector(33 downto 0);
+  signal from_wb_fifo_dout  : std_logic_vector(33 downto 0);
 
   -- Wishbone
   type   wishbone_state_type is (WB_IDLE, WB_READ_FIFO, WB_CYCLE, WB_WAIT_ACK);
@@ -161,6 +162,7 @@ architecture behaviour of wbmaster32 is
   signal wb_we_t    : std_logic;
   signal wb_sel_t   : std_logic_vector(3 downto 0);
   signal wb_stall_t : std_logic;
+  signal wb_cid_t : std_logic_vector(1 downto 0);
 
   signal wb_ack_timeout_cnt : unsigned(log2_ceil(g_ACK_TIMEOUT)-1 downto 0);
   signal wb_ack_timeout     : std_logic;
@@ -211,12 +213,14 @@ begin
         to_wb_fifo_din(62 downto 32) <= pd_wbm_addr_i(0) & pd_wbm_addr_i(31 downto 2);
         to_wb_fifo_din(31 downto 0)  <= pd_wbm_data_i;
         to_wb_fifo_din(63)           <= '1';
+        to_wb_fifo_din(65 downto 64) <= pd_wbm_hdr_cid_i;
         to_wb_fifo_wr                <= '1';
       elsif (pd_wbm_target_mrd_i = '1' and pd_wbm_addr_start_i = '1') then
         -- Target read request
         -- wishbone address is in 32-bit words and address from PCIe in byte
         -- pd_wbm_addr_i(0) represent the BAR (0 = BAR0, 1 = BAR 2)
         to_wb_fifo_din(62 downto 32) <= pd_wbm_addr_i(0) & pd_wbm_addr_i(31 downto 2);
+        to_wb_fifo_din(65 downto 64) <= pd_wbm_hdr_cid_i;
         to_wb_fifo_din(63)           <= '0';
         to_wb_fifo_wr                <= '1';
       else
@@ -231,17 +235,6 @@ begin
   -- Generates read completion with requested data
   -- Single 32-bit word read only
 
-  -- Store CID for read completion packet
-  p_pkt_gen : process (clk_i, rst_n_i)
-  begin
-    if (rst_n_i = c_RST_ACTIVE) then
-      p2l_cid <= (others => '0');
-    elsif rising_edge(clk_i) then
-      if (pd_wbm_hdr_start_i = '1') then
-        p2l_cid <= pd_wbm_hdr_cid_i;
-      end if;
-    end if;
-  end process p_pkt_gen;
 
   --read completion header
   s_l2p_header <= "000"                 -->  Traffic Class
@@ -255,9 +248,19 @@ begin
                   & p2l_cid             -->  CID (Completion Identifer)
                   & "0000000001";       -->  Length (Single 32-bit word read only)
 
-  ------------------------------------------------------------------------------
+ 
+  p2l_cid <= from_wb_fifo_dout(33 downto 32); ------------------------------------------------------------------------------
   -- L2P packet write FSM
   ------------------------------------------------------------------------------
+  process( from_wb_fifo_empty, p_rd_d_rdy_i, l2p_read_cpl_current_state )
+  begin
+    if(l2p_read_cpl_current_state = L2P_IDLE and from_wb_fifo_empty = '0' and p_rd_d_rdy_i = "11") then
+      from_wb_fifo_rd <= '1';
+    else
+      from_wb_fifo_rd <= '0';
+    end if;
+  end process;
+  
   process (clk_i, rst_n_i)
   begin
     if(rst_n_i = c_RST_ACTIVE) then
@@ -266,7 +269,7 @@ begin
       wbm_arb_data_o             <= (others => '0');
       wbm_arb_valid_o            <= '0';
       wbm_arb_dframe_o           <= '0';
-      from_wb_fifo_rd            <= '0';
+
     elsif rising_edge(clk_i) then
       case l2p_read_cpl_current_state is
 
@@ -278,12 +281,12 @@ begin
           if(from_wb_fifo_empty = '0' and p_rd_d_rdy_i = "11") then
             -- generate a packet when read data in fifo and GN4124 ready to receive the packet
             wbm_arb_req_o              <= '1';
-            from_wb_fifo_rd            <= '1';
+
             l2p_read_cpl_current_state <= L2P_HEADER;
           end if;
 
         when L2P_HEADER =>
-          from_wb_fifo_rd <= '0';
+
           if(arb_wbm_gnt_i = '1') then
             wbm_arb_req_o              <= '0';
             wbm_arb_data_o             <= s_l2p_header;
@@ -294,7 +297,7 @@ begin
 
         when L2P_DATA =>
           l2p_read_cpl_current_state <= L2P_IDLE;
-          wbm_arb_data_o             <= from_wb_fifo_dout;
+          wbm_arb_data_o             <= from_wb_fifo_dout(31 downto 0);
           wbm_arb_dframe_o           <= '0';
 
         when others =>
@@ -303,7 +306,7 @@ begin
           wbm_arb_data_o             <= (others => '0');
           wbm_arb_valid_o            <= '0';
           wbm_arb_dframe_o           <= '0';
-          from_wb_fifo_rd            <= '0';
+
 
       end case;
     end if;
@@ -316,7 +319,7 @@ begin
   -- fifo for PCIe to WB transfer
   cmp_fifo_to_wb : generic_async_fifo
     generic map (
-      g_data_width             => 64,
+      g_data_width             => 66,
       g_size                   => c_TO_WB_FIFO_SIZE,
       g_show_ahead             => false,
       g_with_rd_empty          => true,
@@ -353,11 +356,12 @@ begin
   to_wb_fifo_rw   <= to_wb_fifo_dout(63);
   to_wb_fifo_addr <= to_wb_fifo_dout(62 downto 32);  -- 31-bit
   to_wb_fifo_data <= to_wb_fifo_dout(31 downto 0);   -- 32-bit
+  to_wb_fifo_cid  <= to_wb_fifo_dout(65 downto 64);
 
   -- fifo for WB to PCIe transfer
   cmp_from_wb_fifo : generic_async_fifo
     generic map (
-      g_data_width             => 32,
+      g_data_width             => 34,
       g_size                   => c_FROM_WB_FIFO_SIZE,
       g_show_ahead             => false,
       g_with_rd_empty          => true,
@@ -436,6 +440,7 @@ begin
           wb_we_t                <= to_wb_fifo_rw;
           wb_sel_t               <= "1111";
           wb_adr_t               <= to_wb_fifo_addr;
+          wb_cid_t               <= to_wb_fifo_cid;
           --if (to_wb_fifo_rw = '1') then
           wb_dat_o_t             <= to_wb_fifo_data;
           --end if;
@@ -449,7 +454,8 @@ begin
           if (wb_ack_t = '1') then
             -- for read cycles write read data to fifo
             if (wb_we_t = '0') then
-              from_wb_fifo_din <= wb_dat_i_t;
+     			from_wb_fifo_din(31 downto 0)  <= wb_dat_i_t;
+              from_wb_fifo_din(33 downto 32) <= wb_cid_t;
               from_wb_fifo_wr  <= '1';
             end if;
             -- end of the bus cycle
@@ -461,7 +467,8 @@ begin
             -- accessing un-mapped addresses, a timeout makes sure the
             -- transaction terminates.
             if (wb_we_t = '0') then
-              from_wb_fifo_din <= (others => '1');  -- dummy data as the transaction failed
+              from_wb_fifo_din(31 downto 0) <= (others => '1');  -- dummy data as the transaction failed
+              from_wb_fifo_din(33 downto 32) <= wb_cid_t;
               from_wb_fifo_wr  <= '1';
             end if;
             -- end of the bus cycle
