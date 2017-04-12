@@ -221,7 +221,7 @@ class CBusAccessor_Gennum extends CBusAccessor;
 endclass // CBusAccessor_Gennum
 
    function CBusAccessor get_accessor();
-      CBusAccessor_Gennum g = new();
+      automatic CBusAccessor_Gennum g = new();
       return g;
    endfunction
 
@@ -234,8 +234,8 @@ endinterface
 
 `define GENNUM_WIRE_SPEC_PINS(IF_NAME) \
   .L_RST_N   (IF_NAME.SYS.rst_n),\
-//  .L_CLKp (IF_NAME.SYS.lclk_p),\
-//  .L_CLKn (IF_NAME.SYS.lclk_n),\
+  .L_CLKp (IF_NAME.SYS.lclk_p),\
+  .L_CLKn (IF_NAME.SYS.lclk_n),\
   .p2l_clkp  (IF_NAME.P2L.p2l_clk_p),\
   .p2l_clkn  (IF_NAME.P2L.p2l_clk_n),\
   .p2l_data   (IF_NAME.P2L.p2l_data),\
@@ -256,6 +256,32 @@ endinterface
   .p_rd_d_rdy (IF_NAME.L2P.p_rd_d_rdy),\
   .tx_error   (IF_NAME.L2P.tx_error),\
   .vc_rdy     (IF_NAME.P2L.vc_rdy)
+
+//the same as above but with names of the top SPEC entity that stick to naming conventions
+`define GENNUM_WIRE_SPEC_PINS_WITH_PROPER_NAMING(IF_NAME) \
+  .l_rst_n_i    (IF_NAME.SYS.rst_n),\
+  .l_clk_p_i    (IF_NAME.SYS.lclk_p),\
+  .l_clk_n_i    (IF_NAME.SYS.lclk_n),\
+  .p2l_clk_p_i  (IF_NAME.P2L.p2l_clk_p),\
+  .p2l_clk_n_i  (IF_NAME.P2L.p2l_clk_n),\
+  .p2l_data_i   (IF_NAME.P2L.p2l_data),\
+  .p2l_dframe_i (IF_NAME.P2L.p2l_dframe),\
+  .p2l_valid_i  (IF_NAME.P2L.p2l_valid),\
+  .p2l_rdy_o    (IF_NAME.P2L.p2l_rdy),\
+  .p_wr_req_i   (IF_NAME.P2L.p_wr_req),\
+  .p_wr_rdy_o   (IF_NAME.P2L.p_wr_rdy),\
+  .l_rx_error_o (IF_NAME.P2L.rx_error),\
+  .l2p_clk_p_o  (IF_NAME.L2P.l2p_clk_p),\
+  .l2p_clk_n_o  (IF_NAME.L2P.l2p_clk_n),\
+  .l2p_data_o   (IF_NAME.L2P.l2p_data),\
+  .l2p_dframe_o (IF_NAME.L2P.l2p_dframe),\
+  .l2p_valid_o  (IF_NAME.L2P.l2p_valid),\
+  .l2p_edb_o    (IF_NAME.L2P.l2p_edb),\
+  .l2p_rdy_i    (IF_NAME.L2P.l2p_rdy),\
+  .l_wr_rdy_i   (IF_NAME.L2P.l_wr_rdy),\
+  .p_rd_d_rdy_i (IF_NAME.L2P.p_rd_d_rdy),\
+  .tx_error_i   (IF_NAME.L2P.tx_error),\
+  .vc_rdy_i     (IF_NAME.P2L.vc_rdy)
 
 `endif //  `ifndef __GN4124_BFM_SVH
     
