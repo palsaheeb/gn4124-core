@@ -1454,7 +1454,9 @@ CMD <= f_cmd_to_string(CMD_INT);
                 RD_BUFFER_PTR                              := RD_BUFFER_PTR + 1;
                 RD_ADDRESS(RD_ADDRESS'high downto 2)       := L_ADDR(RD_ADDRESS'high downto 2) + '1';
 
-                wait on RD_BUFFER;
+                -- DL: why wait on RD_BUFFER here? for now, disable it as it
+                -- stalls my BTrain testbench
+                --wait on RD_BUFFER;
 
               end if;
 
