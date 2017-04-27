@@ -5,7 +5,12 @@ files = ["dma_controller.vhd",
          "p2l_decode32.vhd",
          "p2l_dma_master.vhd",
          "wbmaster32.vhd",
-         "../../spec/ip_cores/l2p_fifo.ngc"]
+]
+
+if action == "simulation":
+    files.append("../../spec/ip_cores/l2p_fifo.vhd")
+elif action == "synthesis":
+    files.append("../../spec/ip_cores/l2p_fifo.ngc")
 
 modules = { "local" : "spartan6"}
 
